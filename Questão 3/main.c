@@ -5,6 +5,8 @@
 #define NUM_CLIENTS 5
 #define MAX_FILE 50
 
+int banco_saldo = 10000000;
+
 typedef struct _cliente
 {
     int saldo, id;
@@ -13,29 +15,33 @@ typedef struct _cliente
 
 void *Operation(void *file_name)
 {
-    
+   /*
+    * Lê a operação do cliente (depósito, saque, ver saldo)
+    * Trava e checa se a operação é possível
+    * Atualiza os valores do cliente i, e do banco
+    * Destrava
+    */
 }
 
 int main()
 {
-    pthread_t threads[NUM_CLIENTS+1];
+    pthread_t threads[NUM_CLIENTS];
     Cliente *cliente;
 
     // Arquivo com nome, saldo do cliente ? Não precisaria preencher um por um
-    cliente = (Cliente *) malloc(sizeof(Cliente) * NUM_CLIENTS);
-    for (int i = 0; i < NUM_CLIENTS; i++)
-    {
-        
-        printf("Saldo: ");
-        scanf("%d", cliente[i].saldo);
-        printf("\n");
-    }
+    // cliente = (Cliente *) malloc(sizeof(Cliente) * NUM_CLIENTS);
+    // for (int i = 0; i < NUM_CLIENTS; i++)
+    // {
+    //     printf("Saldo: ");
+    //     scanf("%d", cliente[i].saldo);
+    //     printf("\n");
+    // }
 
     // Criar thread do banco
     for (int i = 0; i < NUM_CLIENTS; i++)
-        pthread_create(&threads[i], NULL, Operation, filename);
+        pthread_create(&threads[i], NULL, Operation, cliente[i].client_file);
     
-    for (int i = 0; i < NUM_CLIENTS+1; i++)
+    for (int i = 0; i < NUM_CLIENTS; i++)
         pthread_join(threads[i], NULL);
     
     return 0;
