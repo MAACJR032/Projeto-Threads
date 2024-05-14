@@ -1,0 +1,4 @@
+ saque   14000.20
+Consulta
+      deposito     9000
+saque 1
