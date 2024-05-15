@@ -1,11 +1,11 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <pthread.h>
 
 #define NUM_CLIENTS 3
 #define MAX_FILE 50
+#define MAX_LINE 100
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -24,9 +24,9 @@ typedef struct _cliente
 * Funcionamento do txt:
 * 
 * 1 operação por linha
-* Por linha: Nome da operação e valor (se necessário para a operação)
-* Garante-se que todas as operações nos arquivos txt são
-* depósito, saque e consulta 
+* Em cada linha haverá: Nome da operação e se necessário o valor
+* Todas as operações presente nos arquivos txt são apenas depósito, saque e consulta
+*
 */
 
 
@@ -42,8 +42,7 @@ void *client_operation(void *cliente)
     /* 
      * Lê a operação: Depósito, Saque ou Consulta
      * Verifica se pode ser executada (P/ depósito ou saque)
-     * Sendo possível, altera os valores do banco
-     *  e o valor do cliente   
+     * Sendo possível, altera os valores do banco e do cliente
     */
 
     Cliente *client = (Cliente *) cliente;
@@ -52,14 +51,19 @@ void *client_operation(void *cliente)
 
     if (file != NULL)
     {
-        char line[100];
+        // Vai ler linha por linha
+        char line[MAX_LINE];
 
         while (fgets(line, sizeof(line), file) != NULL)
         {
-            char operation[1000];
+            char operation[MAX_LINE];
             double value = 0;
 
-            // Ler operação e valor da linha
+            /* 
+            * Vai ler operação e valor da linha
+            * Se for lido apenas a operação (Único caso que ocorre é o da consulta)
+            * vai mostrar o saldo, já que o valor de retorno vai ser 1
+            */
             if (sscanf(line, "%s %lf", operation, &value) != 2)
             {
                 printf("Saldo do Cliente %d: %.2lf\n", client->id, client->saldo);
@@ -104,22 +108,21 @@ void *client_operation(void *cliente)
 int main()
 {
     pthread_t threads[NUM_CLIENTS];
-    Cliente cliente[NUM_CLIENTS] = { 1000.00, 1, "cliente_0.txt", 
+    Cliente clients[NUM_CLIENTS] = { 1000.00, 1, "cliente_0.txt", 
                                      2000.00, 2, "cliente_1.txt",
                                      15000.00, 3, "cliente_2.txt"};
 
-
     // Threads dos clientes
     for (int i = 0; i < NUM_CLIENTS; i++)
-        pthread_create(&threads[i], NULL, client_operation, &cliente[i]);
+        pthread_create(&threads[i], NULL, client_operation, (void *) &clients[i]);
 
     for (int i = 0; i < NUM_CLIENTS; i++)
         pthread_join(threads[i], NULL);
     
     // Mostrando saldo final dos clientes e do banco
     for (int i = 0; i < NUM_CLIENTS; i++)
-        printf("Cliente %d: %.2lf\n", cliente[i].id, cliente[i].saldo);
-    
+        printf("Cliente %d: %.2lf\n", clients[i].id, clients[i].saldo);
+
     printf("banco: %.2lf\n", banco_saldo);
 
     return 0;
