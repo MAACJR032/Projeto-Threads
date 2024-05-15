@@ -8,6 +8,8 @@
 #define MAX_FILE 50
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+// garante-se que o saldo inicial do banco é maior ou igual a soma dos saldos iniciais dos clientes
 double banco_saldo = 100000000;
 
 typedef struct _cliente
@@ -22,8 +24,9 @@ typedef struct _cliente
 * Funcionamento do txt:
 * 
 * 1 operação por linha
-* Nome da operação e valor (se necessário para a operação)
-*
+* Por linha: Nome da operação e valor (se necessário para a operação)
+* Garante-se que todas as operações nos arquivos txt são
+* depósito, saque e consulta 
 */
 
 
@@ -36,10 +39,11 @@ void lower(char *read_word)
 
 void *client_operation(void *cliente)
 {
-    /* Le a operação: Depósito, Saque ou Consulta
+    /* 
+     * Lê a operação: Depósito, Saque ou Consulta
      * Verifica se pode ser executada (P/ depósito ou saque)
-     * Sendo possível, altera os valores no banco
-     * Depois altera o valor no cliente   
+     * Sendo possível, altera os valores do banco
+     *  e o valor do cliente   
     */
 
     Cliente *client = (Cliente *) cliente;
@@ -48,66 +52,46 @@ void *client_operation(void *cliente)
 
     if (file != NULL)
     {
-        char operation[1000];
-        char *read_operation;
-        
-        while (fscanf(file, " %999[^ ]", operation) != EOF)
+        char line[100];
+
+        while (fgets(line, sizeof(line), file) != NULL)
         {
-            // Faz um split da linha, ao encontrar esses caracteres
-            // E passa a primeira palavra como referência para read_operation
-            read_operation = strtok(operation, " \t\n");
+            char operation[1000];
+            double value = 0;
 
-            // Lê todas as palavras de uma linha
-            while (read_operation != NULL)
+            // Ler operação e valor da linha
+            if (sscanf(line, "%s %lf", operation, &value) != 2)
             {
-                // Põe em minúsculo a operação a ser executada
-                lower(read_operation);
+                printf("Saldo do Cliente %d: %.2lf\n", client->id, client->saldo);
+                continue;
+            }
+     
+            lower(operation);
 
-                if (strcmp(read_operation, "deposito") == 0)
-                {   
-                    pthread_mutex_lock(&mutex);
-
-                    // Lê o valor a ser depositado
-                    double deposito = 0;
-                    fscanf(file, "%lf", &deposito);
-
-                    // Checa se a operação é válida
-                    if (deposito > 0)
-                    {
-                        client->saldo += deposito;
-                        banco_saldo += deposito;
-                    }
-
-                    pthread_mutex_unlock(&mutex);
-                }
-                else if (strcmp(read_operation, "saque") == 0)
+            if (strcmp(operation, "deposito") == 0)
+            {
+                // Checa se a operação é válida
+                if (value >= 0)
                 {
+                    client->saldo += value;
+
                     pthread_mutex_lock(&mutex);
-
-                    // Lê o valor a ser sacado
-                    double saque = 0;
-                    fscanf(file, "%lf\n", &saque);
-
-                    // Checa se a operação é válida
-                    if (saque > 0 && client->saldo >= saque && banco_saldo >= saque)
-                    {
-                        client->saldo -= saque;
-                        banco_saldo -= saque;
-                    }
-
-                    pthread_mutex_unlock(&mutex);
-                }
-                else if (strcmp(read_operation, "consulta") == 0)
-                {   
-                    pthread_mutex_lock(&mutex);
-
-                    printf("Saldo do Cliente %d: %.2lf\n", client->id, client->saldo);
-
+                    banco_saldo += value;
                     pthread_mutex_unlock(&mutex);
                 }
 
-                // Pegar a referência da próxima palavra
-                read_operation = strtok(NULL, " \t\n");
+            }
+            else if (strcmp(operation, "saque") == 0)
+            {
+                // Checa se a operação é válida
+                if (value >= 0 && client->saldo >= value)
+                {
+                    client->saldo -= value;
+                    
+                    pthread_mutex_lock(&mutex);
+                    banco_saldo -= value;
+                    pthread_mutex_unlock(&mutex);
+                }
             }
         }
 
