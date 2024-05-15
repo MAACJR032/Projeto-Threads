@@ -132,7 +132,7 @@ int main()
     for (int i = 0; i < NUM_CLIENTS; i++)
         pthread_join(threads[i], NULL);
     
-    // Mostrando saldo final dos clientes
+    // Mostrando saldo final dos clientes e do banco
     for (int i = 0; i < NUM_CLIENTS; i++)
         printf("Cliente %d: %.2lf\n", cliente[i].id, cliente[i].saldo);
     
