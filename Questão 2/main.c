@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include <limits.h>
+#include <pthread.h>
 
 #define MAX_THREADS 5
 #define MIN_ARRAY_SIZE 20
@@ -43,9 +43,10 @@ void* BubbleSort(void *args)
 
 int main()
 {
+    // int arr[MIN_ARRAY_SIZE] = { 9, 5, 1, 3, 7, 12, 6, 96, 5, 9874, 56, 515, 12, 15, 17, 654, 98, 84, 47, 46 };
     srand(0);
-    //int arr[MIN_ARRAY_SIZE] = { 9, 5, 1, 3, 7, 12, 6, 96, 5, 9874, 56, 515, 12, 15, 17, 654, 98, 84, 47, 46 };
     int arr[101];
+
     for(unsigned int i = 0; i < 101; i++)
     {
         arr[i] = rand() % 101;
@@ -59,7 +60,7 @@ int main()
     pthread_t threads[MAX_THREADS];
     int indexes[MAX_THREADS];
 
-    //Inicializando a primeira thread
+    // Inicializando a primeira thread
     args[0].ArrayBegin = arr;
     args[0].Size = (arrSize / MAX_THREADS) + (arrSize % MAX_THREADS);
     indexes[0] = 0;
@@ -75,17 +76,16 @@ int main()
         pthread_create(&threads[i], NULL, BubbleSort, &args[i]);
     }
 
-    //Esperando todas as threads finalizarem
+    // Esperando todas as threads finalizarem
     for (unsigned int i = 0; i < MAX_THREADS; i++)
         pthread_join(threads[i], NULL);
 
-
-    //Resultado do array parcialmente ordenado
+    // Resultado do array parcialmente ordenado
     for (unsigned int i = 0; i < arrSize; i++)
         printf("%d ", arr[i]);
     printf("\n");
 
-    //TODO: Mesclar as partes particionadas e organizar o array por inteiro
+    // TODO: Mesclar as partes particionadas e organizar o array por inteiro
     int newArr[arrSize];
     for (unsigned int i = 0; i < arrSize; i++)
     {
