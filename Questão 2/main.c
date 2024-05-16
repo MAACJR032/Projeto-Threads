@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <limits.h>
 #include <pthread.h>
+#include <limits.h>
+#include <memory.h>
 
 #define MAX_THREADS 5
 #define MIN_ARRAY_SIZE 20
@@ -32,67 +33,38 @@ void* BubbleSort(void *args)
                 Swap(&arrayLimits->ArrayBegin[j], &arrayLimits->ArrayBegin[j + 1]);
         }
     }
-
-    /* Debugando o bubble sort de cada thread
-    for(unsigned int i = 0; i < arrayLimits->Size; i++)
-        printf("%i ", arrayLimits->ArrayBegin[i]);
-    printf("\n");
-    */
-   printf("This thread arr size: %d\n", arrayLimits->Size);
 }
 
-int main()
+/// @brief Mesclar os subarrays organizado (nao eh o algortimo merge sort)
+/// @param arr 
+/// @param arrSize 
+/// @param args 
+/// @param numThreads 
+void MergeSort(int *arr, int arrSize, BubbleSortArgs *args, int numThreads)
 {
-    // int arr[MIN_ARRAY_SIZE] = { 9, 5, 1, 3, 7, 12, 6, 96, 5, 9874, 56, 515, 12, 15, 17, 654, 98, 84, 47, 46 };
-    srand(0);
-    int arr[101];
-
-    for(unsigned int i = 0; i < 101; i++)
-    {
-        arr[i] = rand() % 101;
-        printf("%d ", arr[i]);
-    }
-    printf("\n");
-
-    int arrSize = sizeof(arr) / sizeof(int);
-
-    BubbleSortArgs args[MAX_THREADS];
-    pthread_t threads[MAX_THREADS];
-    int indexes[MAX_THREADS];
-
-    // Inicializando a primeira thread
-    args[0].ArrayBegin = arr;
-    args[0].Size = (arrSize / MAX_THREADS) + (arrSize % MAX_THREADS);
-    indexes[0] = 0;
-    pthread_create(&threads[0], NULL, BubbleSort, &args[0]);
-    
-    for (unsigned int i = 1, offset = args[0].Size; i < MAX_THREADS; i++)
-    {
-        args[i].ArrayBegin = arr + offset;
-        args[i].Size = arrSize / MAX_THREADS;
-        offset += args[i].Size;
-        indexes[i] = 0;
-        
-        pthread_create(&threads[i], NULL, BubbleSort, &args[i]);
-    }
-
-    // Esperando todas as threads finalizarem
-    for (unsigned int i = 0; i < MAX_THREADS; i++)
-        pthread_join(threads[i], NULL);
-
-    // Resultado do array parcialmente ordenado
-    for (unsigned int i = 0; i < arrSize; i++)
-        printf("%d ", arr[i]);
-    printf("\n");
-
-    // TODO: Mesclar as partes particionadas e organizar o array por inteiro
     int newArr[arrSize];
+    int indexes[numThreads];
+    //Zera os indices
+    memset(indexes, 0, sizeof(indexes));
+
+    //Se os sub arrays forem por exemplo
+    // 1 5 7 9 - Indice 0
+    // 2 3 4 6 - Indice 0
+    // - - - - - - - - Array Total
+    //Pegamos o menor elemento entre os dois menores elementos desse array
+    //Ou seja comparamos quem é menor 1 ou 2, como o 1 é menor pegamos o 1
+    //e avançamos no subarray escolhido
+    // - 5 7 9 - Indice 1
+    // 2 3 4 6 - Indice 0
+    // 1 - - - - - - - Array total
+    //Agora comparamos 5 com 2 e pegamos o menor e assim por diante
     for (unsigned int i = 0; i < arrSize; i++)
     {
         int min = INT_MAX;
         int subArrayPicked = 0;
 
-        for (unsigned int j = 0; j < MAX_THREADS; j++)
+        //Escolhe o menor valor entre os subarrays
+        for (unsigned int j = 0; j < numThreads; j++)
         {
             if(indexes[j] >= args[j].Size)
                 continue;
@@ -109,8 +81,41 @@ int main()
         newArr[i] = min;
     }
 
+    //Copia o array organizado para o array original
+    memcpy(arr, newArr, sizeof(newArr));
+}
+
+int main()
+{
+    int arr[MIN_ARRAY_SIZE] = { 9, 5, 1, 3, 7, 12, 6, 96, 5, 9874, 56, 515, 12, 15, 17, 654, 98, 84, 47, 46 };
+
+    int arrSize = sizeof(arr) / sizeof(int);
+
+    BubbleSortArgs args[MAX_THREADS];
+    pthread_t threads[MAX_THREADS];
+
+    //Inicializando a primeira thread
+    args[0].ArrayBegin = arr;
+    args[0].Size = (arrSize / MAX_THREADS) + (arrSize % MAX_THREADS);
+    pthread_create(&threads[0], NULL, BubbleSort, &args[0]);
+    
+    for (unsigned int i = 1, offset = args[0].Size; i < MAX_THREADS; i++)
+    {
+        args[i].ArrayBegin = arr + offset;
+        args[i].Size = arrSize / MAX_THREADS;
+        offset += args[i].Size;
+        
+        pthread_create(&threads[i], NULL, BubbleSort, &args[i]);
+    }
+
+    //Esperando todas as threads finalizarem
+    for (unsigned int i = 0; i < MAX_THREADS; i++)
+        pthread_join(threads[i], NULL);
+
+    MergeSort(arr, arrSize, args, MAX_THREADS);
+
     for (unsigned int i = 0; i < arrSize; i++)
-        printf("%d ", newArr[i]);
+        printf("%d ", arr[i]);
     printf("\n");
 
     return 0;
