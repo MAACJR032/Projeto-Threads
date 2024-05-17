@@ -4,26 +4,25 @@
 #include <pthread.h>
 
 #define NUM_CLIENTS 3
+#define NUM_FILES 4
 #define MAX_FILE 50
 #define MAX_LINE 100
 
 pthread_mutex_t mutex_banco = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_clientes[NUM_CLIENTS]; 
 
 // garante-se que o saldo inicial do banco é maior ou igual a soma dos saldos iniciais dos clientes
 double banco_saldo = 100000000;
-
-typedef struct _cliente
-{
-    double saldo;
-    int id;
-    char client_file[MAX_FILE];
-} Cliente;
+double clientes_saldo[NUM_CLIENTS] = {1500, 2500, 15000};
 
 
 /*
 * Funcionamento do txt:
 * 
-* 1 operação por linha
+* Primeira linha contém o id do cliente, que é usado para acessar o array clientes_saldo
+* O id está em 0 <= id < NUM_CLIENTS
+*
+* As outras linhas terão 1 operação por linha
 * Em cada linha haverá: Nome da operação e se necessário o valor
 * Todas as operações presente nos arquivos txt são apenas depósito, saque e consulta
 *
@@ -37,17 +36,19 @@ void lower(char *read_word)
         read_word[i] = tolower(read_word[i]);
 }
 
-void *client_operation(void *cliente)
+void *client_operation(void *filename)
 {
-    Cliente *client = (Cliente *) cliente;
-
-    FILE *file = fopen((char *) client->client_file, "rt");
+    FILE *file = fopen((char *) filename, "rt");
 
     if (file != NULL)
     {
+        // Pegar o id do cliente
+        int id = 0;
+        fscanf(file, "%d\n", &id);
+
         // Vai ler linha por linha
         char line[MAX_LINE];
-
+    
         while (fgets(line, sizeof(line), file) != NULL)
         {
             char operation[MAX_LINE];
@@ -60,7 +61,10 @@ void *client_operation(void *cliente)
             */
             if (sscanf(line, "%s %lf", operation, &value) != 2)
             {
-                printf("Saldo do Cliente %d: %.2lf\n", client->id, client->saldo);
+                pthread_mutex_lock(&mutex_clientes[id]);
+                printf("Saldo do Cliente %d: %.2lf\n", id, clientes_saldo[id]);
+                pthread_mutex_unlock(&mutex_clientes[id]);
+
                 continue;
             }
      
@@ -71,8 +75,12 @@ void *client_operation(void *cliente)
                 // Checa se a operação é válida
                 if (value >= 0)
                 {
-                    client->saldo += value;
+                    // Atualiza o saldo do cliente
+                    pthread_mutex_lock(&mutex_clientes[id]);
+                    clientes_saldo[id] += value;
+                    pthread_mutex_unlock(&mutex_clientes[id]);
 
+                    // Atualiza o saldo do cliente
                     pthread_mutex_lock(&mutex_banco);
                     banco_saldo += value;
                     pthread_mutex_unlock(&mutex_banco);
@@ -82,10 +90,14 @@ void *client_operation(void *cliente)
             else if (strcmp(operation, "saque") == 0)
             {
                 // Checa se a operação é válida
-                if (value >= 0 && client->saldo >= value)
+                if (value >= 0 && clientes_saldo[id] >= value)
                 {
-                    client->saldo -= value;
-                    
+                    // Atualiza o saldo do cliente
+                    pthread_mutex_lock(&mutex_clientes[id]);
+                    clientes_saldo[id] -= value;
+                    pthread_mutex_unlock(&mutex_clientes[id]);
+
+                    // Atualiza o saldo do banco
                     pthread_mutex_lock(&mutex_banco);
                     banco_saldo -= value;
                     pthread_mutex_unlock(&mutex_banco);
@@ -96,26 +108,29 @@ void *client_operation(void *cliente)
         fclose(file);
     }
     else
-        printf("Thread failed to open file %s\n", client->client_file);
+        printf("Thread failed to open file %s\n", (char *) filename);
 }
 
 int main()
 {
-    pthread_t threads[NUM_CLIENTS];
-    Cliente clients[NUM_CLIENTS] = { 1000.00, 1, "cliente_0.txt", 
-                                     2000.00, 2, "cliente_1.txt",
-                                     15000.00, 3, "cliente_2.txt"};
+    pthread_t threads[NUM_FILES];
+    char files[NUM_FILES][MAX_FILE] = {"cliente_0.txt", 
+                                       "cliente_1.txt",
+                                       "cliente_2.txt",
+                                       "cliente_3.txt"};
+
+    /* O MUTEX DO BANCO NÃO CONTA COMO THREAD ?!*/
 
     // Threads dos clientes
-    for (int i = 0; i < NUM_CLIENTS; i++)
-        pthread_create(&threads[i], NULL, client_operation, (void *) &clients[i]);
+    for (int i = 0; i < NUM_FILES; i++)
+        pthread_create(&threads[i], NULL, client_operation, (void *) files[i]);
 
-    for (int i = 0; i < NUM_CLIENTS; i++)
+    for (int i = 0; i < NUM_FILES; i++)
         pthread_join(threads[i], NULL);
     
     // Mostrando saldo final dos clientes e do banco
     for (int i = 0; i < NUM_CLIENTS; i++)
-        printf("Cliente %d: %.2lf\n", clients[i].id, clients[i].saldo);
+        printf("Cliente %d: %.2lf\n", i, clientes_saldo[i]);
 
     printf("banco: %.2lf\n", banco_saldo);
 
