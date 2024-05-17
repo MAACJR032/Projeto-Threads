@@ -14,7 +14,7 @@ typedef struct
     int Size, *ArrayBegin;
 } BubbleSortArgs;
 
-void Swap(int* a, int* b)
+void Swap(int *a, int *b)
 {
     int tmp = *a;
     *a = *b;
