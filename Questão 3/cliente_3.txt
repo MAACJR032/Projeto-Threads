@@ -1,0 +1,4 @@
+0
+deposito 2000
+consulta
+saque 500.50
