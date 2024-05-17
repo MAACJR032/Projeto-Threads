@@ -44,26 +44,26 @@ void MergeSort(int *arr, int arrSize, BubbleSortArgs *args, int numThreads)
 {
     int newArr[arrSize];
     int indexes[numThreads];
-    //Zera os indices
+    // Zera os indices
     memset(indexes, 0, sizeof(indexes));
 
-    //Se os sub arrays forem por exemplo
+    // Se os sub arrays forem por exemplo
     // 1 5 7 9 - Indice 0
     // 2 3 4 6 - Indice 0
     // - - - - - - - - Array Total
-    //Pegamos o menor elemento entre os dois menores elementos desse array
-    //Ou seja comparamos quem é menor 1 ou 2, como o 1 é menor pegamos o 1
-    //e avançamos no subarray escolhido
+    // Pegamos o menor elemento entre os dois menores elementos desse array
+    // Ou seja comparamos quem é menor 1 ou 2, como o 1 é menor pegamos o 1
+    // e avançamos no subarray escolhido
     // - 5 7 9 - Indice 1
     // 2 3 4 6 - Indice 0
     // 1 - - - - - - - Array total
-    //Agora comparamos 5 com 2 e pegamos o menor e assim por diante
+    // Agora comparamos 5 com 2 e pegamos o menor e assim por diante
     for (unsigned int i = 0; i < arrSize; i++)
     {
         int min = INT_MAX;
         int subArrayPicked = 0;
 
-        //Escolhe o menor valor entre os subarrays
+        // Escolhe o menor valor entre os subarrays
         for (unsigned int j = 0; j < numThreads; j++)
         {
             if(indexes[j] >= args[j].Size)
@@ -81,7 +81,7 @@ void MergeSort(int *arr, int arrSize, BubbleSortArgs *args, int numThreads)
         newArr[i] = min;
     }
 
-    //Copia o array organizado para o array original
+    // Copia o array organizado para o array original
     memcpy(arr, newArr, sizeof(newArr));
 }
 
@@ -94,7 +94,7 @@ int main()
     BubbleSortArgs args[MAX_THREADS];
     pthread_t threads[MAX_THREADS];
 
-    //Inicializando a primeira thread
+    // Inicializando a primeira thread
     args[0].ArrayBegin = arr;
     args[0].Size = (arrSize / MAX_THREADS) + (arrSize % MAX_THREADS);
     pthread_create(&threads[0], NULL, BubbleSort, &args[0]);
@@ -108,7 +108,7 @@ int main()
         pthread_create(&threads[i], NULL, BubbleSort, &args[i]);
     }
 
-    //Esperando todas as threads finalizarem
+    // Esperando todas as threads finalizarem
     for (unsigned int i = 0; i < MAX_THREADS; i++)
         pthread_join(threads[i], NULL);
 
