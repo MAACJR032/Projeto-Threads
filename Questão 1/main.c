@@ -14,9 +14,9 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void* FindWord(void* filename)
 {
-    FILE* file = fopen((char*)filename, "rt");
+    FILE* file = fopen((char*) filename, "rt");
 
-    if(file != NULL)
+    if (file != NULL)
     {
         const char* ignorable = " \t\n.,;:!?'\"\\/()[]{}<>-";
         char currentChar = 0;
@@ -29,7 +29,7 @@ void* FindWord(void* filename)
         {
             currentChar = tolower(currentChar);
 
-            if(i >= searchWordSize)
+            if (i >= searchWordSize)
             {
                 // Checando se o caracter após a ultima letra da palavra
                 // que esta dando match é um dos caracteres ignoraveis
@@ -104,10 +104,10 @@ int main()
     };
     pthread_t threads[FILES_COUNT];
 
-    for(unsigned int i = 0; i < FILES_COUNT; i++)
+    for (unsigned int i = 0; i < FILES_COUNT; i++)
         pthread_create(&threads[i], NULL, FindWord, filenames[i]);
 
-    for(unsigned int i = 0; i < FILES_COUNT; i++)
+    for (unsigned int i = 0; i < FILES_COUNT; i++)
         pthread_join(threads[i], NULL);
 
     printf("Word Count: %d\n", wordCount);
