@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 #include <pthread.h>
+#include "queue.h"
 
 #define NUM_CLIENTS 3
 #define NUM_FILES 4
@@ -10,11 +12,12 @@
 
 pthread_mutex_t mutex_banco = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_clientes[NUM_CLIENTS]; 
+pthread_cond_t cond_banco = PTHREAD_COND_INITIALIZER;
 
 // garante-se que o saldo inicial do banco é maior ou igual a soma dos saldos iniciais dos clientes
 double banco_saldo = 100000000;
 double clientes_saldo[NUM_CLIENTS] = {1500, 2500, 15000};
-
+Queue *solicitacoes;
 
 /*
 * Funcionamento do txt:
@@ -75,15 +78,20 @@ void *client_operation(void *filename)
                 // Checa se a operação é válida
                 if (value >= 0)
                 {
+                    // Coloca uma solicitação de depósito na fila
+                    pthread_mutex_lock(&mutex_banco);
+
+                    // Adiciona na fila
+                    enqueue(solicitacoes, value, 0);
+
+                    pthread_cond_signal(&cond_banco); // Sinaliza a thread do banco que há uma nova solicitação
+
+                    pthread_mutex_unlock(&mutex_banco);
+
                     // Atualiza o saldo do cliente
                     pthread_mutex_lock(&mutex_clientes[id]);
                     clientes_saldo[id] += value;
                     pthread_mutex_unlock(&mutex_clientes[id]);
-
-                    // Atualiza o saldo do cliente
-                    pthread_mutex_lock(&mutex_banco);
-                    banco_saldo += value;
-                    pthread_mutex_unlock(&mutex_banco);
                 }
 
             }
@@ -92,40 +100,75 @@ void *client_operation(void *filename)
                 // Checa se a operação é válida
                 if (value >= 0 && clientes_saldo[id] >= value)
                 {
+                    pthread_mutex_lock(&mutex_banco);
+
+                    // Adiciona na fila
+                    enqueue(solicitacoes, value, 1);
+
+                    pthread_cond_signal(&cond_banco); // Sinaliza a thread do banco que há uma nova solicitação
+
+                    pthread_mutex_unlock(&mutex_banco);
+
                     // Atualiza o saldo do cliente
                     pthread_mutex_lock(&mutex_clientes[id]);
                     clientes_saldo[id] -= value;
                     pthread_mutex_unlock(&mutex_clientes[id]);
-
-                    // Atualiza o saldo do banco
-                    pthread_mutex_lock(&mutex_banco);
-                    banco_saldo -= value;
-                    pthread_mutex_unlock(&mutex_banco);
                 }
             }
         }
-
         fclose(file);
     }
     else
         printf("Thread failed to open file %s\n", (char *) filename);
 }
 
+void* bank_operations()
+{
+    while (1)
+    {
+        pthread_mutex_lock(&mutex_banco);
+
+        while (is_empty(solicitacoes))
+        {
+            pthread_cond_wait(&cond_banco, &mutex_banco);
+        }
+
+        // Atualiza os valores do banco
+        if (solicitacoes->tail->operation == 0)
+            banco_saldo += solicitacoes->tail->value;
+        else
+            banco_saldo -= solicitacoes->tail->value;
+        
+        // Remove da fila
+        dequeue(solicitacoes);
+
+        pthread_mutex_unlock(&mutex_banco);
+    }
+}
+
 int main()
 {
-    pthread_t threads[NUM_FILES];
+    solicitacoes = create_queue();
+    pthread_t threads[NUM_FILES+1];
     char files[NUM_FILES][MAX_FILE] = {"cliente_0.txt", 
                                        "cliente_1.txt",
                                        "cliente_2.txt",
                                        "cliente_3.txt"};
+    
+    /* REVER LÓGICA DO SINAL */
 
-    /* O MUTEX DO BANCO NÃO CONTA COMO THREAD ?!*/
+    // Inicializando os mutexes dos clientes
+    for (int i = 0; i < NUM_CLIENTS; i++)
+        pthread_mutex_init(&mutex_clientes[i], NULL);
 
     // Threads dos clientes
     for (int i = 0; i < NUM_FILES; i++)
         pthread_create(&threads[i], NULL, client_operation, (void *) files[i]);
 
-    for (int i = 0; i < NUM_FILES; i++)
+
+    pthread_create(&threads[NUM_CLIENTS], NULL, bank_operations, NULL);
+
+    for (int i = 0; i < NUM_FILES + 1; i++)
         pthread_join(threads[i], NULL);
     
     // Mostrando saldo final dos clientes e do banco
@@ -133,6 +176,10 @@ int main()
         printf("Cliente %d: %.2lf\n", i, clientes_saldo[i]);
 
     printf("banco: %.2lf\n", banco_saldo);
+    
+    // Destroindo os mutexes dos clientes
+    for (int i = 0; i < NUM_CLIENTS; i++)
+        pthread_mutex_destroy(&mutex_clientes[i]);
 
     return 0;
 }
