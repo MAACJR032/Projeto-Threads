@@ -7,7 +7,7 @@
 #define MAX_FILE 50
 #define MAX_LINE 100
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_banco = PTHREAD_MUTEX_INITIALIZER;
 
 // garante-se que o saldo inicial do banco é maior ou igual a soma dos saldos iniciais dos clientes
 double banco_saldo = 100000000;
@@ -73,9 +73,9 @@ void *client_operation(void *cliente)
                 {
                     client->saldo += value;
 
-                    pthread_mutex_lock(&mutex);
+                    pthread_mutex_lock(&mutex_banco);
                     banco_saldo += value;
-                    pthread_mutex_unlock(&mutex);
+                    pthread_mutex_unlock(&mutex_banco);
                 }
 
             }
@@ -86,9 +86,9 @@ void *client_operation(void *cliente)
                 {
                     client->saldo -= value;
                     
-                    pthread_mutex_lock(&mutex);
+                    pthread_mutex_lock(&mutex_banco);
                     banco_saldo -= value;
-                    pthread_mutex_unlock(&mutex);
+                    pthread_mutex_unlock(&mutex_banco);
                 }
             }
         }

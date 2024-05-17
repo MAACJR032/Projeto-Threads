@@ -10,7 +10,7 @@
 const char* c_SearchedWord = "e";
 unsigned int wordCount = 0;
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_banco = PTHREAD_MUTEX_INITIALIZER;
 
 void* FindWord(void* filename)
 {
@@ -46,11 +46,11 @@ void* FindWord(void* filename)
                 // como a palavra "couve" que contem a palavra "ou"
                 if (isIgnorable)
                 {
-                    pthread_mutex_lock(&mutex);
+                    pthread_mutex_lock(&mutex_banco);
 
                     wordCount++;
 
-                    pthread_mutex_unlock(&mutex);
+                    pthread_mutex_unlock(&mutex_banco);
                 }
                 
                 i = 0;

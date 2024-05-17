@@ -4,7 +4,7 @@
 
 #define NUM_THREADS 27
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_banco = PTHREAD_MUTEX_INITIALIZER;
 
 bool valido = true;
 
@@ -37,9 +37,9 @@ void* LC(void *idfunc)
             
             if (nums[num])
             {
-                pthread_mutex_lock(&mutex);
+                pthread_mutex_lock(&mutex_banco);
                 valido = false;
-                pthread_mutex_unlock(&mutex);
+                pthread_mutex_unlock(&mutex_banco);
             }
 
             nums[num] = true;        
@@ -57,9 +57,9 @@ void* LC(void *idfunc)
             
             if(nums[num]){
 
-                pthread_mutex_lock(&mutex);
+                pthread_mutex_lock(&mutex_banco);
                 valido = false;
-                pthread_mutex_unlock(&mutex);
+                pthread_mutex_unlock(&mutex_banco);
             }
 
             nums[num] = true;
@@ -87,9 +87,9 @@ void *Quad(void *idfunc)
 
             if (num < 1 || num > 9 || nums[num])
             {
-                pthread_mutex_lock(&mutex);
+                pthread_mutex_lock(&mutex_banco);
                 valido = false;
-                pthread_mutex_unlock(&mutex);
+                pthread_mutex_unlock(&mutex_banco);
             }
 
             nums[num] = true;
