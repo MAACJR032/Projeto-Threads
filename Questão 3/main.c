@@ -186,7 +186,7 @@ int main()
     // Inicializando o mutex dos clientes e a barreira
     for (int i = 0; i < NUM_FILES; i++)
         pthread_mutex_init(&mutex_clientes[i], NULL);
-    pthread_barrier_init(barrier, NULL, NUM_FILES+1);
+    pthread_barrier_init(barrier, NULL, NUM_FILES);
     
     // Threads dos clientes e do banco
     for (int i = 0; i < NUM_FILES; i++)
@@ -195,9 +195,6 @@ int main()
 
     for (int i = 0; i < NUM_FILES; i++)
         pthread_join(threads[i], NULL);
-
-    // Espera todas as threads dos cliente terminarem
-    pthread_barrier_wait(&barrier);
 
     // Sinalização para encerrar a thread do banco
     fim = true;
