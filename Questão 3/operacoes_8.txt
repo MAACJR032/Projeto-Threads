@@ -1,0 +1,4 @@
+4
+saque 999.99
+deposito 105.35
+saque 15.90

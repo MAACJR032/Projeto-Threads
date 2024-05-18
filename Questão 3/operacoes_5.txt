@@ -1,0 +1,9 @@
+3
+saque 5000
+consulta
+deposito 1080.90
+saque 290.99
+saque 780.00
+consulta
+saque 100.00
+deposito 200.00

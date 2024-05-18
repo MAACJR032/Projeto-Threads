@@ -1,3 +1,7 @@
 0
 deposito 2000.00
 saque 630.00
+consulta
+Deposito 490.90
+saque 344.78
+consulta
