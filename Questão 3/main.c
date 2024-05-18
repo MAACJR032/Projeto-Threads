@@ -69,6 +69,7 @@ void *client_operation(void *filename)
                 pthread_mutex_unlock(&mutex_clientes[id]);
 
                 continue;
+                // destravar
             }
      
             lower(operation);
@@ -161,6 +162,12 @@ int main()
     for (int i = 0; i < NUM_CLIENTS; i++)
         pthread_mutex_init(&mutex_clientes[i], NULL);
 
+    /* FAZER A THREAD DO BANCO */
+    
+    // Inicializando o mutex de cada cliente
+    for (int i = 0; i < NUM_FILES; i++)
+        mutex_cliente[i] = PTHREAD_MUTEX_INITIALIZER;
+    
     // Threads dos clientes
     for (int i = 0; i < NUM_FILES; i++)
         pthread_create(&threads[i], NULL, client_operation, (void *) files[i]);
