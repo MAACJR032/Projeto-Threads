@@ -2,13 +2,15 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-// operation pode receber 2 valore: 0 e 1
+// operation pode receber 3 valores: 0, 1 e 2
 // 0 - depósito
 // 1 - saque
+// 2 - consulta
 typedef struct Node
 {
-    int value;
+    double value;
     int operation;
+    int id;
     struct Node *next;
 } Node;
 
@@ -30,29 +32,13 @@ Queue *create_queue()
     return q;
 }
 
-int getSize(Queue *q)
-{
-    return q->size;
-}
-
-int peek(Queue *q, bool *status)
-{
-    if (q->size == 0)
-    {
-        (*status) = false;
-        return 0;
-    }
-
-    (*status) = true;
-    return q->head->value;
-}
-
-void enqueue(Queue *q, int value, int operation)
+void enqueue(Queue *q, double value, int operation, int id)
 {
     Node *newNode = (Node*) malloc(sizeof(Node));
 
     newNode->value = value;
     newNode->operation = operation;
+    newNode->id = id;
     newNode->next = NULL;
 
     if (q->size == 0)
@@ -68,13 +54,12 @@ void enqueue(Queue *q, int value, int operation)
     q->size++;
 }
 
-int dequeue(Queue *q)
+Node* dequeue(Queue *q)
 {
     if (q->size == 0)
-        return -1;
+        return NULL;
 
     Node *temp = q->head;
-    int value = q->head->value;
 
     if (q->size == 1)
     {
@@ -84,10 +69,9 @@ int dequeue(Queue *q)
     else
         q->head = q->head->next;    
 
-    free(temp);
     q->size--;
     
-    return value;
+    return temp;
 }
 
 bool is_empty(Queue *q)
@@ -95,4 +79,17 @@ bool is_empty(Queue *q)
     if (q->size == 0)
         return true;
     return false;
+}
+
+void destroy_queue(Queue *q)
+{
+    Node *curr = q->head;
+
+    while (curr != NULL)
+    {
+        Node *temp = curr;
+        curr = curr->next;
+        free(temp);
+    }
+    free(q);   
 }

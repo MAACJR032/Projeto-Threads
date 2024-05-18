@@ -1,0 +1,5 @@
+1
+deposito 10000.00
+saque 3000.00
+consulta
+deposito 2000.00
