@@ -70,10 +70,11 @@ void *client_operation(void *filename)
                 // Adiciona na fila
                 // Sinaliza para a thread do banco que há uma nova operação para ser executada
                 pthread_mutex_lock(&mutex_banco);
-                enqueue(operacoes, 0, 2, id);
-                pthread_mutex_unlock(&mutex_banco);
 
-                pthread_cond_signal(&cond_banco); 
+                enqueue(operacoes, 0, 2, id);
+                pthread_cond_signal(&cond_banco);
+
+                pthread_mutex_unlock(&mutex_banco);
                 continue;
             }
      
@@ -86,10 +87,11 @@ void *client_operation(void *filename)
                     // Adiciona na fila
                     // E sinaliza para a thread do banco que há uma nova operação para ser executada
                     pthread_mutex_lock(&mutex_banco);
-                    enqueue(operacoes, value, 0, id);
-                    pthread_mutex_unlock(&mutex_banco);
 
+                    enqueue(operacoes, value, 0, id);
                     pthread_cond_signal(&cond_banco);
+                    
+                    pthread_mutex_unlock(&mutex_banco);
                 }
 
             }
@@ -101,10 +103,11 @@ void *client_operation(void *filename)
                     // Adiciona na fila
                     // E sinaliza para a thread do banco que há uma nova operação para ser executada
                     pthread_mutex_lock(&mutex_banco);
-                    enqueue(operacoes, value, 1, id);
-                    pthread_mutex_unlock(&mutex_banco);
 
+                    enqueue(operacoes, value, 1, id);
                     pthread_cond_signal(&cond_banco);
+
+                    pthread_mutex_unlock(&mutex_banco);
                 }
             }
         }
@@ -198,9 +201,13 @@ int main()
         pthread_join(threads[i], NULL);
 
     // Sinalização para encerrar a thread do banco
+    pthread_mutex_lock(&mutex_banco);
+
     fim = true;
     pthread_cond_signal(&cond_banco);
 
+    pthread_mutex_unlock(&mutex_banco);
+    
     // Espera a thread do banco finalizar
     pthread_join(threads[NUM_FILES], NULL);
 
