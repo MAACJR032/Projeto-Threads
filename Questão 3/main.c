@@ -9,11 +9,10 @@
 
 #define NUM_CLIENTS 5
 #define NUM_FILES 10
-#define MAX_FILE 50
+#define MAX_FILE_NAME 50
 #define MAX_LINE 100
 
 pthread_mutex_t mutex_banco = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex_clientes[NUM_CLIENTS]; 
 pthread_cond_t cond_banco = PTHREAD_COND_INITIALIZER;
 pthread_barrier_t barrier;
 
@@ -36,11 +35,11 @@ bool fim = false; // Flag para saber se as operações de todos os txt's foram e
 */
 
 
-// Função para colocar palavra em minúsculo
-void lower(char *read_word)
+// Função para colocar a operação em minúsculo
+void lower(char *operation)
 {
-    for (int i = 0; i < strlen(read_word); i++)
-        read_word[i] = tolower(read_word[i]);
+    for (int i = 0; i < strlen(operation); i++)
+        operation[i] = tolower(operation[i]);
 }
 
 void *client_operation(void *filename)
@@ -63,7 +62,7 @@ void *client_operation(void *filename)
 
             /* 
             * Vai ler operação e valor da linha
-            * Se for lido apenas a operação (Único caso que ocorre é o da consulta)
+            * Se for lido apenas a operação (Único caso que ocorre é o da consulta),
             * vai adicinar na fila uma operação de consulta, já que o valor de retorno vai ser 1
             */
             if (sscanf(line, "%s %lf", operation, &value) != 2)
@@ -85,7 +84,7 @@ void *client_operation(void *filename)
                 if (value >= 0)
                 {
                     // Adiciona na fila
-                    // Sinaliza para a thread do banco que há uma nova operação para ser executada
+                    // E sinaliza para a thread do banco que há uma nova operação para ser executada
                     pthread_mutex_lock(&mutex_banco);
                     enqueue(operacoes, value, 0, id);
                     pthread_mutex_unlock(&mutex_banco);
@@ -100,7 +99,7 @@ void *client_operation(void *filename)
                 if (value >= 0)
                 {
                     // Adiciona na fila
-                    // E Sinaliza para a thread do banco que há uma nova operação para ser executada
+                    // E sinaliza para a thread do banco que há uma nova operação para ser executada
                     pthread_mutex_lock(&mutex_banco);
                     enqueue(operacoes, value, 1, id);
                     pthread_mutex_unlock(&mutex_banco);
@@ -144,9 +143,6 @@ void* bank_operations()
 
         if (temp != NULL)
         {
-            // Trava a thread do cliente, para executar as operações
-            pthread_mutex_lock(&mutex_clientes[temp->id]);
-
             if (temp->operation == 0) // Depósito
             {
                 banco_saldo += temp->value;
@@ -164,8 +160,6 @@ void* bank_operations()
             else if (temp->operation == 2) // Consulta
                 printf("Saldo do Cliente %d: %.2lf\n", temp->id, clientes_saldo[temp->id]);
 
-            pthread_mutex_unlock(&mutex_clientes[temp->id]);
-
             // Libera o nó
             free(temp);
         }
@@ -177,23 +171,21 @@ void* bank_operations()
 int main()
 {
     pthread_t threads[NUM_FILES+1];
-    char files[NUM_FILES][MAX_FILE] = {"operacoes_0.txt", 
-                                       "operacoes_1.txt",
-                                       "operacoes_2.txt",
-                                       "operacoes_3.txt",
-                                       "operacoes_4.txt",
-                                       "operacoes_5.txt",
-                                       "operacoes_6.txt",
-                                       "operacoes_7.txt",
-                                       "operacoes_8.txt",
-                                       "operacoes_9.txt",};
+    char files[NUM_FILES][MAX_FILE_NAME] = {"operacoes_0.txt", 
+                                            "operacoes_1.txt",
+                                            "operacoes_2.txt",
+                                            "operacoes_3.txt",
+                                            "operacoes_4.txt",
+                                            "operacoes_5.txt",
+                                            "operacoes_6.txt",
+                                            "operacoes_7.txt",
+                                            "operacoes_8.txt",
+                                            "operacoes_9.txt" };
     
     // Cria a fila
     operacoes = create_queue();
 
-    // Inicializando o mutex dos clientes e a barreira
-    for (int i = 0; i < NUM_FILES; i++)
-        pthread_mutex_init(&mutex_clientes[i], NULL);
+    // Inicializando a barreira
     pthread_barrier_init(barrier, NULL, NUM_FILES);
     
     // Threads dos clientes e do banco
@@ -201,6 +193,7 @@ int main()
         pthread_create(&threads[i], NULL, client_operation, (void *) files[i]);
     pthread_create(&threads[NUM_FILES], NULL, bank_operations, NULL);
 
+    // Espera as threads dos clientes finalizarem
     for (int i = 0; i < NUM_FILES; i++)
         pthread_join(threads[i], NULL);
 
@@ -208,19 +201,15 @@ int main()
     fim = true;
     pthread_cond_signal(&cond_banco);
 
-    // Thread do banco
+    // Espera a thread do banco finalizar
     pthread_join(threads[NUM_FILES], NULL);
 
     // Mostrando saldo final dos clientes e do banco
-    printf("\n");
     for (int i = 0; i < NUM_CLIENTS; i++)
-        printf("Cliente %d: %.2lf\n", i, clientes_saldo[i]);
-    printf("banco: %.2lf\n", banco_saldo);
+        printf("\nSaldo Final do Cliente %d: %.2lf", i, clientes_saldo[i]);
+    printf("\nSaldo Final do Banco: %.2lf\n", banco_saldo);
     
-    // Destruindo os mutexes dos clientes, a barreira e a fila
-    for (int i = 0; i < NUM_CLIENTS; i++)
-        pthread_mutex_destroy(&mutex_clientes[i]);
-    
+    // Destruindo a barreira e a fila
     pthread_barrier_destroy(&barrier);
     destroy_queue(operacoes);
     

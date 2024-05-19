@@ -21,7 +21,7 @@ typedef struct Queue
     int size;
 } Queue;
 
-Queue *create_queue()
+Queue* create_queue()
 {
     Queue *q = (Queue*) malloc(sizeof(Queue));
 
