@@ -46,7 +46,7 @@ void* escalonador(void* arg) {
         pthread_t tmp;
         Node* node = dequeue(lista_pronto);
         pthread_create(&tmp, NULL, executar, node);
-        
+        count++;
         //Enquanto os N núcleos estiverem cheios escalonador dorme
         while(count == N)
             pthread_cond_wait(&fullConditional, &mutex);
