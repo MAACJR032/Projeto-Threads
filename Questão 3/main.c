@@ -12,9 +12,9 @@
 #define MAX_FILE_NAME 50
 #define MAX_LINE 100
 
-pthread_mutex_t mutex_banco = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t cond_banco = PTHREAD_COND_INITIALIZER;
-pthread_barrier_t barrier;
+pthread_mutex_t mutex_banco = PTHREAD_MUTEX_INITIALIZER; // Mutex para realizar as operações
+pthread_cond_t cond_banco = PTHREAD_COND_INITIALIZER; // Cond para a thread do banco
+pthread_barrier_t barrier; // Barreira para encerrar a thread do banco quando todas as threads dos clientes encerrarem
 
 // garante-se que o saldo inicial do banco é maior ou igual a soma dos saldos iniciais dos clientes
 double banco_saldo = 100000000;
@@ -35,7 +35,7 @@ bool fim = false; // Flag para saber se as operações de todos os txt's foram e
 */
 
 
-// Função para colocar a operação em minúsculo
+// Função para colocar string da operação em minúsculo
 void lower(char *operation)
 {
     for (int i = 0; i < strlen(operation); i++)
@@ -67,7 +67,7 @@ void *client_operation(void *filename)
             */
             if (sscanf(line, "%s %lf", operation, &value) != 2)
             {
-                // Adiciona na fila
+                // Adiciona na fila uma operação de consulta
                 // Sinaliza para a thread do banco que há uma nova operação para ser executada
                 pthread_mutex_lock(&mutex_banco);
 
@@ -84,7 +84,7 @@ void *client_operation(void *filename)
                 // Checa se é um valor válido
                 if (value >= 0)
                 {
-                    // Adiciona na fila
+                    // Adiciona na fila uma operação de depósito
                     // E sinaliza para a thread do banco que há uma nova operação para ser executada
                     pthread_mutex_lock(&mutex_banco);
 
@@ -100,7 +100,7 @@ void *client_operation(void *filename)
                 // Checa se é um valor válido
                 if (value >= 0)
                 {
-                    // Adiciona na fila
+                    // Adiciona na fila uma operação de saque
                     // E sinaliza para a thread do banco que há uma nova operação para ser executada
                     pthread_mutex_lock(&mutex_banco);
 
@@ -120,14 +120,14 @@ void *client_operation(void *filename)
     pthread_barrier_wait(&barrier);
 }
 
-void* bank_operations()
+void* bank_operations(void *arg)
 {
     while (true)
     {
         pthread_mutex_lock(&mutex_banco);
 
         // Espera enquanto a fila de operações está vazia
-        // E enquanto todas as threads dos clientes ainda não foram finalizadas
+        // E enquanto todas as threads dos clientes não forem finalizadas
         while (is_empty(operacoes) && fim == false)
         {
             pthread_cond_wait(&cond_banco, &mutex_banco);
@@ -185,13 +185,11 @@ int main()
                                             "operacoes_8.txt",
                                             "operacoes_9.txt" };
     
-    // Cria a fila
+    // Cria a fila e inicia a barreira
     operacoes = create_queue();
-
-    // Inicializando a barreira
-    pthread_barrier_init(barrier, NULL, NUM_FILES);
+    pthread_barrier_init(&barrier, NULL, NUM_FILES);
     
-    // Threads dos clientes e do banco
+    // Cria as threads dos clientes e do banco
     for (int i = 0; i < NUM_FILES; i++)
         pthread_create(&threads[i], NULL, client_operation, (void *) files[i]);
     pthread_create(&threads[NUM_FILES], NULL, bank_operations, NULL);
