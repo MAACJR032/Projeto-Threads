@@ -14,7 +14,6 @@
 
 pthread_mutex_t mutex_banco = PTHREAD_MUTEX_INITIALIZER; // Mutex para realizar as operações
 pthread_cond_t cond_banco = PTHREAD_COND_INITIALIZER; // Cond para a thread do banco
-pthread_barrier_t barrier; // Barreira para encerrar a thread do banco quando todas as threads dos clientes encerrarem
 
 // garante-se que o saldo inicial do banco é maior ou igual a soma dos saldos iniciais dos clientes
 double banco_saldo = 100000000;
@@ -115,9 +114,6 @@ void *client_operation(void *filename)
     }
     else
         printf("Thread failed to open file %s\n", (char *) filename);
-    
-    // Espera todas as threads dos clientes terminarem
-    pthread_barrier_wait(&barrier);
 }
 
 void* bank_operations(void *arg)
@@ -185,9 +181,8 @@ int main()
                                             "operacoes_8.txt",
                                             "operacoes_9.txt" };
     
-    // Cria a fila e inicia a barreira
+    // Cria a fila
     operacoes = create_queue();
-    pthread_barrier_init(&barrier, NULL, NUM_FILES);
     
     // Cria as threads dos clientes e do banco
     for (int i = 0; i < NUM_FILES; i++)
@@ -214,8 +209,7 @@ int main()
         printf("\nSaldo Final do Cliente %d: %.2lf", i, clientes_saldo[i]);
     printf("\nSaldo Final do Banco: %.2lf\n", banco_saldo);
     
-    // Destruindo a barreira e a fila
-    pthread_barrier_destroy(&barrier);
+    // Destruindo a fila
     destroy_queue(operacoes);
     
     return 0;
