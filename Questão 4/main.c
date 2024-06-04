@@ -9,7 +9,7 @@ typedef struct{
     int linha;
     int coluna;
 
-}Dado;
+} Dado;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -28,44 +28,37 @@ int sudoku[9][9] = {
 };
 
 void *LC(void *idfunc) {
-
     Dado *id = (Dado *) idfunc;
 
     int linha = id->linha;
     int coluna = id->coluna;
 
     if (coluna == 0) {
-
         linha -= 1;
 
         bool nums[10] = {false};
 
-        for (int j = 0; j < 9; j++) {
-                
-                int num = sudoku[linha][j];
-                
-                if(nums[num]){
-                    pthread_mutex_lock(&mutex);
-                    valido = false;
-                    pthread_mutex_unlock(&mutex);
-                }
+        for (int j = 0; j < 9; j++) {      
+            int num = sudoku[linha][j];
+            
+            if (nums[num]) {
+                pthread_mutex_lock(&mutex);
+                valido = false;
+                pthread_mutex_unlock(&mutex);
+            }
 
-                nums[num] = true;        
+            nums[num] = true;        
         }
     } 
-    
     else {
-
         coluna -= 1;
 
         bool nums[10] = {false};
 
         for (int i = 0; i < 9; i++) {
-            
             int num = sudoku[i][coluna];
             
-            if(nums[num]){
-
+            if (nums[num]) {
                 pthread_mutex_lock(&mutex);
                 valido = false;
                 pthread_mutex_unlock(&mutex);
@@ -79,7 +72,6 @@ void *LC(void *idfunc) {
 }
 
 void *Quad(void *idfunc) {
-
     Dado *id = (Dado *) idfunc;
 
     int linha = id->linha;
@@ -89,7 +81,6 @@ void *Quad(void *idfunc) {
 
     for (int i = linha; i < linha + 3; i++) {
         for (int j = coluna; j < coluna + 3; j++) {
-
             int num = sudoku[i][j];
 
             if (num < 1 || num > 9 || nums[num]) {
@@ -106,19 +97,18 @@ void *Quad(void *idfunc) {
 }
 
 int main() {
-
-    pthread_t Processos[NUM];
+    pthread_t threads[NUM];
     Dado Dados[NUM];
 
     int cod;
     int threadcount = 0;
 
-    for (int id = 1; id < 10; id++) { // linhas
-
+    // linhas
+    for (int id = 1; id < 10; id++) {
         Dados[threadcount].linha = id; 
         Dados[threadcount].coluna = 0; 
 
-        cod = pthread_create(&Processos[threadcount], NULL, LC, (void *) &Dados[threadcount]);
+        cod = pthread_create(&threads[threadcount], NULL, LC, (void *) &Dados[threadcount]);
         threadcount++;
 
         if (cod) {
@@ -126,12 +116,12 @@ int main() {
         }
     }
 
-    for (int id = 1; id < 10; id++) { // colunas
-
+    // colunas
+    for (int id = 1; id < 10; id++) {
         Dados[threadcount].linha = 0; 
         Dados[threadcount].coluna = id; 
 
-        cod = pthread_create(&Processos[threadcount], NULL, LC, (void *) &Dados[threadcount]);
+        cod = pthread_create(&threads[threadcount], NULL, LC, (void *) &Dados[threadcount]);
         threadcount++;
 
         if (cod) {
@@ -139,13 +129,13 @@ int main() {
         }
     }
 
-    for (int idx = 0; idx < 9; idx += 3) { // 3x3
+    // 3x3
+    for (int idx = 0; idx < 9; idx += 3) {
         for (int idy = 0; idy < 9; idy += 3) {
-
             Dados[threadcount].linha = idx;
             Dados[threadcount].coluna = idy;
 
-            cod = pthread_create(&Processos[threadcount], NULL, Quad, (void *) &Dados[threadcount]);
+            cod = pthread_create(&threads[threadcount], NULL, Quad, (void *) &Dados[threadcount]);
 
             if (cod) {
                 printf("Problema ao criar thread: %d", cod);
@@ -156,13 +146,11 @@ int main() {
     }
 
     for (int id = 0; id < NUM; id++) {
-        pthread_join(Processos[id], NULL);
+        pthread_join(threads[id], NULL);
     }
-
     if (valido) {
         printf("É uma solução válida\n");
     } 
-    
     else {
         printf("Não é uma solução válida\n");
     }
