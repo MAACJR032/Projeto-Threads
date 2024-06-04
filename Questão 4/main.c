@@ -40,7 +40,7 @@ void *LC(void *idfunc) {
 
         bool nums[10] = {false};
 
-        for (int j = 0; j < 9 && valido; j++) {
+        for (int j = 0; j < 9; j++) {
                 
                 int num = sudoku[linha][j];
                 
@@ -60,7 +60,7 @@ void *LC(void *idfunc) {
 
         bool nums[10] = {false};
 
-        for (int i = 0; i < 9 && valido; i++) {
+        for (int i = 0; i < 9; i++) {
             
             int num = sudoku[i][coluna];
             
@@ -87,8 +87,8 @@ void *Quad(void *idfunc) {
 
     bool nums[10] = {false}; 
 
-    for (int i = linha; i < linha + 3 && valido; i++) {
-        for (int j = coluna; j < coluna + 3 && valido; j++) {
+    for (int i = linha; i < linha + 3; i++) {
+        for (int j = coluna; j < coluna + 3; j++) {
 
             int num = sudoku[i][j];
 
