@@ -7,7 +7,7 @@
 #define FILES_COUNT 10
 #define MAX_FILENAME 30
 
-const char* c_SearchedWord = "e";
+const char* c_SearchedWord = "amor";
 unsigned int wordCount = 0;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
