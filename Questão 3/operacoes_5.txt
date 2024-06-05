@@ -1,5 +1,4 @@
 3
-saque 5000
 consulta
 deposito 1080.90
 saque 290.99
