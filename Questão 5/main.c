@@ -13,15 +13,13 @@ typedef struct {
 
 pthread_barrier_t Barreira;
 
-//Ax = B
-
+// Ax = B
 int A[2][2] = {{2, 1}, {5, 7}};
 int B[2][1] = {{11}, {13}};
 
-double X[I][P]; //Guarda os valores antigos de cada X
+double X[I][P]; // Guarda os valores antigos de cada X
 
 void *Jacobi(void *idfunc) {
-
     Dados *temp = (Dados *)idfunc;
 
     pthread_barrier_wait(&Barreira); // Esperar as thread para nenhuma ser instanciada durante o algoritmo
@@ -30,12 +28,11 @@ void *Jacobi(void *idfunc) {
 
         int inc = temp->id;
 
-        while (inc < temp->id + temp->qtd) { // while para calcular todas os xi da thread 
-
+        // while para calcular todas os xi da thread
+        while (inc < temp->id + temp->qtd) { 
             double sum = 0.0;
             
             for (int j = 0; j < I; j++) {
-
                 if (j != inc) {
                     sum += A[inc][j] * X[j][k];
                 }
@@ -53,8 +50,9 @@ void *Jacobi(void *idfunc) {
 }
 
 int main() {
-
-    for (int i = 0; i < I; i++) { //Inicializar com 1
+    
+    // Inicializar com 1
+    for (int i = 0; i < I; i++) {
         X[i][0] = 1.0;
     }
 
@@ -64,7 +62,7 @@ int main() {
     scanf("%d", &qtd);
 
     Dados dado[qtd];
-    pthread_t Processos[qtd];
+    pthread_t threads[qtd];
 
     pthread_barrier_init(&Barreira, NULL, qtd);
 
@@ -73,13 +71,12 @@ int main() {
     int inc = 0;
 
     for (int i = 0; i < qtd; i++) {
-
         dado[i].qtd = qtd_por_thread + (i < resto ? 1 : 0); //Distribui 1 para cada qtd-1 thread
         dado[i].id = inc;
 
         inc += dado[i].qtd;
 
-        int cod = pthread_create(&Processos[i], NULL, Jacobi, (void *)&dado[i]);
+        int cod = pthread_create(&threads[i], NULL, Jacobi, (void *)&dado[i]);
 
         if (cod) {
             printf("Erro ao criar thread: %d", cod);
@@ -88,15 +85,13 @@ int main() {
     }
 
     for (int i = 0; i < qtd; i++) {
-        pthread_join(Processos[i], NULL);
+        pthread_join(threads[i], NULL);
     }
 
     pthread_barrier_destroy(&Barreira);
 
     for(int i=0; i < I; i++){
-
         printf("Solução X%d : %f\n", i, X[i][P]);
-
     }
 
     return 0;
