@@ -4,15 +4,12 @@
 
 #define NUM 27
 
-typedef struct{
-
+typedef struct {
     int linha;
     int coluna;
-
 } Dado;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
 bool valido = true;
 
 int sudoku[9][9] = {
@@ -27,21 +24,23 @@ int sudoku[9][9] = {
     {3, 4, 5, 2, 8, 6, 1, 7, 9}
 };
 
-void *LC(void *idfunc) {
+void *LC(void *idfunc) 
+{
     Dado *id = (Dado *) idfunc;
 
     int linha = id->linha;
     int coluna = id->coluna;
 
-    if (coluna == 0) {
-        linha -= 1;
-
+    if (linha >= 0) 
+    {
         bool nums[10] = {false};
 
-        for (int j = 0; j < 9; j++) {      
+        for (int j = 0; j < 9; j++) 
+        {
             int num = sudoku[linha][j];
             
-            if (nums[num]) {
+            if (nums[num])
+            {
                 pthread_mutex_lock(&mutex);
                 valido = false;
                 pthread_mutex_unlock(&mutex);
@@ -50,15 +49,16 @@ void *LC(void *idfunc) {
             nums[num] = true;        
         }
     } 
-    else {
-        coluna -= 1;
-
+    else
+    {
         bool nums[10] = {false};
 
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < 9; i++) 
+        {
             int num = sudoku[i][coluna];
             
-            if (nums[num]) {
+            if (nums[num]) 
+            {
                 pthread_mutex_lock(&mutex);
                 valido = false;
                 pthread_mutex_unlock(&mutex);
@@ -68,10 +68,11 @@ void *LC(void *idfunc) {
         }
     }
 
-    pthread_exit(NULL);
+    return NULL;
 }
 
-void *Quad(void *idfunc) {
+void *Quad(void *idfunc) 
+{
     Dado *id = (Dado *) idfunc;
 
     int linha = id->linha;
@@ -79,11 +80,14 @@ void *Quad(void *idfunc) {
 
     bool nums[10] = {false}; 
 
-    for (int i = linha; i < linha + 3; i++) {
-        for (int j = coluna; j < coluna + 3; j++) {
+    for (int i = linha; i < linha + 3; i++) 
+    {
+        for (int j = coluna; j < coluna + 3; j++) 
+        {
             int num = sudoku[i][j];
 
-            if (num < 1 || num > 9 || nums[num]) {
+            if (num < 1 || num > 9 || nums[num]) 
+            {
                 pthread_mutex_lock(&mutex);
                 valido = false;
                 pthread_mutex_unlock(&mutex);
@@ -93,69 +97,57 @@ void *Quad(void *idfunc) {
         }
     }
 
-    pthread_exit(NULL);
+    return NULL;
 }
 
-int main() {
+int main()
+{
     pthread_t threads[NUM];
     Dado Dados[NUM];
 
-    int cod;
     int threadcount = 0;
 
     // linhas
-    for (int id = 1; id < 10; id++) {
+    for (int id = 0; id < 9; id++) 
+    {
         Dados[threadcount].linha = id; 
-        Dados[threadcount].coluna = 0; 
+        Dados[threadcount].coluna = -1; 
 
-        cod = pthread_create(&threads[threadcount], NULL, LC, (void *) &Dados[threadcount]);
+        pthread_create(&threads[threadcount], NULL, LC, (void *) &Dados[threadcount]);
         threadcount++;
-
-        if (cod) {
-            printf("Problema ao criar thread: %d", cod);
-        }
     }
 
     // colunas
-    for (int id = 1; id < 10; id++) {
-        Dados[threadcount].linha = 0; 
+    for (int id = 0; id < 9; id++) 
+    {
+        Dados[threadcount].linha = -1; 
         Dados[threadcount].coluna = id; 
 
-        cod = pthread_create(&threads[threadcount], NULL, LC, (void *) &Dados[threadcount]);
+        pthread_create(&threads[threadcount], NULL, LC, (void *) &Dados[threadcount]);
         threadcount++;
-
-        if (cod) {
-            printf("Problema ao criar thread: %d", cod);
-        }
     }
 
     // 3x3
-    for (int idx = 0; idx < 9; idx += 3) {
-        for (int idy = 0; idy < 9; idy += 3) {
+    for (int idx = 0; idx < 9; idx += 3) 
+    {
+        for (int idy = 0; idy < 9; idy += 3) 
+        {
             Dados[threadcount].linha = idx;
             Dados[threadcount].coluna = idy;
 
-            cod = pthread_create(&threads[threadcount], NULL, Quad, (void *) &Dados[threadcount]);
-
-            if (cod) {
-                printf("Problema ao criar thread: %d", cod);
-            }
+            pthread_create(&threads[threadcount], NULL, Quad, (void *) &Dados[threadcount]);
 
             threadcount++;
         }
     }
 
-    for (int id = 0; id < NUM; id++) {
+    for (int id = 0; id < NUM; id++) 
         pthread_join(threads[id], NULL);
-    }
-    if (valido) {
-        printf("É uma solução válida\n");
-    } 
-    else {
-        printf("Não é uma solução válida\n");
-    }
 
-    pthread_exit(NULL);
+    if(valido) 
+        printf("É uma solução válida\n");
+    else
+        printf("Não é uma solução válida\n");
 
     return 0;
 }
