@@ -4,39 +4,50 @@
 #include <ctype.h>
 #include <pthread.h>
 
+typedef unsigned int uint;
+
 #define FILES_COUNT 10
 #define MAX_FILENAME 30
 
+// Pode mudar aqui a palavra que deseja procurar
+// Mas ela devera estar com todas as letras minusculas
 const char* c_SearchedWord = "amor";
-unsigned int wordCount = 0;
+uint searchWordSize = 0;
+
+const char* c_Ignorable = " \t\n.,;:!?'\"\\/()[]{}<>-";
+const uint c_IgnorableSize = 22;
+
+uint wordCount = 0;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
+/// @brief Procura pela palavra escolhida em c_SearchedWord independente
+/// @brief Se no texto estiver maiuscula ou minuscula
+/// @param filename 
+/// @return 
 void* FindWord(void* filename)
 {
     FILE* file = fopen((char*) filename, "rt");
 
     if (file != NULL)
     {
-        const char* ignorable = " \t\n.,;:!?'\"\\/()[]{}<>-";
-        char currentChar = 0;
+        char currentChar = 0; 
         char previousChar = 0;
         unsigned int i = 0;
-        unsigned int searchWordSize = strlen(c_SearchedWord);
-        unsigned int ignorableSize = strlen(ignorable);
 
         while ((currentChar = fgetc(file)) != EOF)
         {
             currentChar = tolower(currentChar);
 
+            // Checa se ja comparou todas as letras da palavra procurada
             if (i >= searchWordSize)
             {
-                // Checando se o caracter após a ultima letra da palavra
-                // que esta dando match é um dos caracteres ignoraveis
+                // Checando se o caracter apos a ultima letra da palavra
+                // que esta dando match eh um dos caracteres ignoraveis
                 int isIgnorable = 0;
-                for (unsigned int j = 0; j < ignorableSize && isIgnorable == 0; j++)
+                for (unsigned int j = 0; j < c_IgnorableSize && isIgnorable == 0; j++)
                 {
-                    if (currentChar == ignorable[j])
+                    if (currentChar == c_Ignorable[j])
                         isIgnorable = 1;
                 }
 
@@ -56,18 +67,23 @@ void* FindWord(void* filename)
                 i = 0;
             }
 
+            // Checando letra da palavra com a letra do texto
             if (currentChar == c_SearchedWord[i])
             {
                 i++;
 
-                // Se o i for um entao antes ela era 0 ou seja esse foi o primeiro
+                // Se o i for 1 entao antes ela era 0 ou seja esse foi o primeiro
                 // caracter a dar match
                 if (i == 1)
                 {
+                    // Considere a palavra procurada seja "ou"
+                    // Precisamos entao checar se antes desse primeiro caracter havia um
+                    // Caracter ignoravel como no caso "(ou" onde o parenteses eh ignoravel
+                    // Mas no caso "couve" que contem a palavra "ou" o 'c' nao eh ignoravel
                     int isIgnorable = 0;
-                    for (unsigned int j = 0; j < ignorableSize && isIgnorable == 0; j++)
+                    for (unsigned int j = 0; j < c_IgnorableSize && isIgnorable == 0; j++)
                     {
-                        if(previousChar == ignorable[j])
+                        if(previousChar == c_Ignorable[j])
                             isIgnorable = 1;
                     }
 
@@ -76,7 +92,7 @@ void* FindWord(void* filename)
                 }
             }
             else
-                i = 0;
+                i = 0; // Se forem diferentes voltamos para a primeira letra da palavra procurada
 
             previousChar = currentChar;
         }
@@ -103,6 +119,9 @@ int main()
         "text_9.txt"
     };
     pthread_t threads[FILES_COUNT];
+
+    // Calculando dinamicamente o tamanho da palavra procurada
+    searchWordSize = strlen(c_SearchedWord);
 
     for (unsigned int i = 0; i < FILES_COUNT; i++)
         pthread_create(&threads[i], NULL, FindWord, filenames[i]);
