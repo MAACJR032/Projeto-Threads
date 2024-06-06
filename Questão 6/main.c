@@ -14,8 +14,6 @@ pthread_cond_t emptyConditional = PTHREAD_COND_INITIALIZER;
 // condicional para fazer a thread do escalonador dormir quando n tem thread na lista e acorda quando uma for inserida
 pthread_cond_t fullConditional = PTHREAD_COND_INITIALIZER;
 
-pthread_t threads_exec[N];
-
 // lista_pronto --> array que representa uma fila de execucao pendente das threads
 // estrutra que tem um ponteiro para a funcao e cada thread da lista e representado por essa estrutura
 Queue *lista_pronto;
@@ -92,7 +90,6 @@ int main()
 {
     lista_pronto = create_queue();
     
-
     // cria a thread do escalonador e inicia a func escalonador
     pthread_t thread_escalonador;
     pthread_create(&thread_escalonador, NULL, escalonador, NULL);
