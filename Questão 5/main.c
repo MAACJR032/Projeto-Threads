@@ -17,33 +17,41 @@ pthread_barrier_t Barreira;
 int A[2][2] = {{2, 1}, {5, 7}};
 int B[2][1] = {{11}, {13}};
 
-double X[I][P]; // Guarda os valores antigos de cada X
+// array para guarda os valores antigos de cada variavel 
+double X[I][P]; 
 
 void *Jacobi(void *idfunc) {
-    Dados *temp = (Dados *)idfunc;
 
-    pthread_barrier_wait(&Barreira); // Esperar as thread para nenhuma ser instanciada durante o algoritmo
+    Dados *temp = (Dados *)idfunc;
+    
+    // Esperar as thread para nenhuma ser instanciada durante o algoritmo
+    pthread_barrier_wait(&Barreira); 
 
     for (int k = 0; k < P; k++) {
 
         int inc = temp->id;
 
-        // while para calcular todas os xi da thread
+        // while para calcular todas as variaveis da respectiva thread
+
         while (inc < temp->id + temp->qtd) { 
+            
             double sum = 0.0;
             
+            // fazer o somatorio de A[ij] * X[j]
             for (int j = 0; j < I; j++) {
                 if (j != inc) {
                     sum += A[inc][j] * X[j][k];
                 }
             }
             
+            // Formula de Jacobi, colocando o valor para X( K + 1)
             X[inc][k + 1] = (1.0 / A[inc][inc]) * (B[inc][0] - sum); 
             
             inc++;
         }
 
-        pthread_barrier_wait(&Barreira); // esperar todas as threads calcularem para cada K
+        // esperar todas as threads calcularem para cada K
+        pthread_barrier_wait(&Barreira); 
     }
 
     pthread_exit(NULL);
@@ -51,7 +59,7 @@ void *Jacobi(void *idfunc) {
 
 int main() {
     
-    // Inicializar com 1
+    // Inicializar com 1 todas as variaveis
     for (int i = 0; i < I; i++) {
         X[i][0] = 1.0;
     }
@@ -66,12 +74,16 @@ int main() {
 
     pthread_barrier_init(&Barreira, NULL, qtd);
 
+    //fazer a divisão de qtd variaveis por thread 
     int qtd_por_thread = I / qtd;
     int resto = I % qtd;
     int inc = 0;
 
     for (int i = 0; i < qtd; i++) {
-        dado[i].qtd = qtd_por_thread + (i < resto ? 1 : 0); //Distribui 1 para cada qtd-1 thread
+
+        //Distribui 1 para cada qtd-1 thread 
+        //Caso a divisão seja inexata  
+        dado[i].qtd = qtd_por_thread + (i < resto ? 1 : 0); 
         dado[i].id = inc;
 
         inc += dado[i].qtd;
