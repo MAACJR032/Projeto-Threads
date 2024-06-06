@@ -24,6 +24,7 @@ int sudoku[9][9] = {
     {3, 4, 5, 2, 8, 6, 1, 7, 9}
 };
 
+// funcão para tratar as linhas e colunas
 void *LC(void *idfunc) 
 {
     Dado *id = (Dado *) idfunc;
@@ -31,14 +32,16 @@ void *LC(void *idfunc)
     int linha = id->linha;
     int coluna = id->coluna;
 
-    if (linha >= 0) 
+    if (linha >= 0) // separar as linhas das colunas
     {
+        // array para fazer verificar se houver repetição
         bool nums[10] = {false};
 
         for (int j = 0; j < 9; j++) 
         {
             int num = sudoku[linha][j];
             
+            // se houve repeticao o valor sera true e entrará nesse if
             if (nums[num])
             {
                 pthread_mutex_lock(&mutex);
@@ -46,11 +49,15 @@ void *LC(void *idfunc)
                 pthread_mutex_unlock(&mutex);
             }
 
-            nums[num] = true;        
+            //se n houve coloca como true
+            nums[num] = true;    
+                
         }
     } 
+
     else
     {
+        // mesma coisa da de cima, porém para tratar as colunas
         bool nums[10] = {false};
 
         for (int i = 0; i < 9; i++) 
@@ -71,6 +78,7 @@ void *LC(void *idfunc)
     return NULL;
 }
 
+//função para tratar os subgrades 3x3
 void *Quad(void *idfunc) 
 {
     Dado *id = (Dado *) idfunc;
@@ -78,6 +86,7 @@ void *Quad(void *idfunc)
     int linha = id->linha;
     int coluna = id->coluna;
 
+    // array para verificar repetição
     bool nums[10] = {false}; 
 
     for (int i = linha; i < linha + 3; i++) 
@@ -86,6 +95,7 @@ void *Quad(void *idfunc)
         {
             int num = sudoku[i][j];
 
+            // se houver repetição ou o numero não estiver no intervalo 1 a 9 entra nesse if 
             if (num < 1 || num > 9 || nums[num]) 
             {
                 pthread_mutex_lock(&mutex);
@@ -93,7 +103,7 @@ void *Quad(void *idfunc)
                 pthread_mutex_unlock(&mutex);
             }
 
-            nums[num] = true;
+            nums[num] = true; // se n houve repetição, modifica para true para dizer que o num já foi contado
         }
     }
 
@@ -110,7 +120,7 @@ int main()
     // linhas
     for (int id = 0; id < 9; id++) 
     {
-        Dados[threadcount].linha = id; 
+        Dados[threadcount].linha = id; //oassando o num da linha para cada thread
         Dados[threadcount].coluna = -1; 
 
         pthread_create(&threads[threadcount], NULL, LC, (void *) &Dados[threadcount]);
@@ -121,18 +131,19 @@ int main()
     for (int id = 0; id < 9; id++) 
     {
         Dados[threadcount].linha = -1; 
-        Dados[threadcount].coluna = id; 
+        Dados[threadcount].coluna = id; // passando o num da coluna para cada thread 
 
         pthread_create(&threads[threadcount], NULL, LC, (void *) &Dados[threadcount]);
         threadcount++;
     }
 
     // 3x3
+    // o for somando +3 em x e y é para passar os subgrades para cada thread
     for (int idx = 0; idx < 9; idx += 3) 
     {
         for (int idy = 0; idy < 9; idy += 3) 
         {
-            Dados[threadcount].linha = idx;
+            Dados[threadcount].linha = idx; 
             Dados[threadcount].coluna = idy;
 
             pthread_create(&threads[threadcount], NULL, Quad, (void *) &Dados[threadcount]);
